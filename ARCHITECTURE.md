@@ -1,27 +1,23 @@
-# VNI Service
-
-This repository contains the code for the HPE Cray Slingshot 11 VNI Service for deployment in a Kubernetes cluster.
-
-## Architecture
+ Architecture
 
 The VNI Service is responsible for handing out VNIs (Virtual Networ IDs) to requesting Kubernetes "jobs" and 
 subsequently recycling them upon job termination. A "job" is considered a K8s resource instance which governs the lifetime 
 of a set of pods. Examples of a job are (actual) Jobs, ReplicaSets or Deployments.
 
-### Requirements
+## Requirements
 (1) A VNI may not be handed out to two unrelated jobs.
 (2) VNIs must be uniquely allocated to the requesting job(s) for the entirety of their lifetime.
 (3) VNIs must be recycled after the associated job has terminated.
 
 
-### Components
+## Components
 The VNI Service consists of roughly three components:
 
 1. VNI Custom Resource Definition (CRD)
 2. VNI CRD Controller
 3. VNI Database & Endpoint
 
-#### VNI Custom Resource Definition
+### VNI Custom Resource Definition
 
 The VNI CRD defines the K8s-internal representation of VNIs. 
 An instantiated VNI Resource object stores one VNI as allocated in the VNI Database (3), which is an integer.
@@ -32,7 +28,7 @@ VNI resource objects have the name `vni-<uid-of-owning-job>` and are namespaced 
 
 The VNI CRD is defined in `configs/vni-crd.yml`.
 
-#### VNI CRD Controller
+### VNI CRD Controller
 
 VNI resource objects in and of themselves only store state, in this case the VNI integer.
 In order to act upon creation / deletion of VNI resource objects or the owning job objects, a custom Controller is used.
@@ -57,25 +53,25 @@ The semantics of the `/finalize` endpoint is a specialization of the `/sync` end
 events where the involved object should be deleted. When set, the involved VNI object is only deleted after the endpoint
 has been called. It is used to inform the VNI Database that the VNI is no longer used and can be deleted.
 
-#### VNI Database & Endpoint
+### VNI Database & Endpoint
 
 As outlined in the previous section, the VNI CRD Controller calls the two endpoints `/sync` and `/finalize`, which are provided
 by the VNI endpoint. The source code is stored in the `endpoint` folder.
 
-##### Sync
+#### Sync
 
 The `/sync` endpoint is called with a list of "attachments", referring to the VNI resource objects to be created.
 For each attachment, a new VNI is acquired from the database (see below).
 All new objects are returned in the response body.
 
-##### Finalize
+#### Finalize
 
 Similar to the `/sync` endpoint, the `/finalize` endpoint is called with a list of attachments / VNI objects with are to be
 deleted. For each attachment, the corresponding VNI is released from the database (see below).
 An empty attachment list is returned, indicating that all VNIs have been released.
 
 
-##### Database
+#### Database
 
 The database is currently a sqlite3 file, since no replication is required.
 The table `vni_allocs` stores the current VNI allocations and has the following schema: 
@@ -100,6 +96,6 @@ Note that this table is currently generated for each `Acquire` call.
 
 During Release, the corresponding entry in `vni_allocs` is deleted.
 
-# Links
+ Links
 
 [1] https://metacontroller.github.io/metacontroller/
