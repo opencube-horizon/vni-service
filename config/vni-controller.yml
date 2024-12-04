@@ -1,0 +1,27 @@
+apiVersion: metacontroller.k8s.io/v1alpha1
+kind: DecoratorController
+metadata:
+  name: vni-controller
+  namespace: vni-management
+spec:
+  resources:
+    - apiVersion: apps/v1
+      resource: deployments
+      annotationSelector:
+        matchExpressions:
+          - {key: needs-vni, operator: Exists}
+    - apiVersion: batch/v1
+      resource: jobs
+      annotationSelector:
+        matchExpressions:
+          - { key: needs-vni, operator: Exists }
+  attachments:
+    - apiVersion: horizon-opencube.eu/v1
+      resource: vnis
+  hooks:
+    sync:
+      webhook:
+        url: http://vni-endpoint-service.vni-management:8842/sync
+    finalize:
+      webhook:
+        url: http://vni-endpoint-service.vni-management:8842/finalize

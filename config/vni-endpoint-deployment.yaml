@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vni-endpoint-pvc
+  namespace: vni-management
+spec:
+  accessModes:
+    - ReadWriteOnce
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: vni-management
+  name: vni-endpoint
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vni-endpoint
+  template:
+    metadata:
+      labels:
+        app: vni-endpoint
+    spec:
+      containers:
+        - name: vni-service-endpoint
+          image: harbor.pt.horizon-opencube.eu/vni-management/vni-service-endpoint:latest
+          volumeMounts:
+            - name: vni-endpoint-db
+              mountPath: /opt/db
+      volumes:
+        - name: vni-endpoint-db
+          persistentVolumeClaim:
+            claimName: vni-endpoint-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: vni-management
+  name: vni-endpoint-service
+spec:
+  selector:
+    app: vni-endpoint
+  ports:
+    - port: 8842
