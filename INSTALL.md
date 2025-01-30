@@ -28,6 +28,7 @@ buildah build -t vni_service_endpoint -f Containerfile
 Upload it to your container registry of choice.
 
 Finally, run the `vni-endpoint-deployment.yml` file, which should deploy the VNI Endpoint.
+Make sure to adapt the image url to point to the image of your container registry of choice.
 
 ## Usage
 
