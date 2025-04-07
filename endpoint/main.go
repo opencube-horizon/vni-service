@@ -11,8 +11,7 @@ func main() {
 	shouldLog := flag.Bool("log", false, "Log events to vni_allocs_log")
 	flag.Parse()
 
-	err := StartServer(filePath, *shouldLog)
-	if err != nil {
+	if err := StartServer(filePath, *shouldLog); err != nil {
 		log.Fatalf("Error starting server: %v", err)
 	}
 }
