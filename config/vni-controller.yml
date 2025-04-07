@@ -1,7 +1,7 @@
 apiVersion: metacontroller.k8s.io/v1alpha1
 kind: DecoratorController
 metadata:
-  name: vni-controller
+  name: vni-autovni-controller
   namespace: vni-management
 spec:
   resources:
@@ -9,12 +9,30 @@ spec:
       resource: deployments
       annotationSelector:
         matchExpressions:
-          - {key: needs-vni, operator: Exists}
+          - {key: vni, operator: Exists}
+    - apiVersion: apps/v1
+      resource: daemonsets
+      annotationSelector:
+        matchExpressions:
+          - {key: vni, operator: Exists}
+    - apiVersion: apps/v1
+      resource: replicasets
+      annotationSelector:
+        matchExpressions:
+          - {key: vni, operator: Exists}
     - apiVersion: batch/v1
       resource: jobs
       annotationSelector:
         matchExpressions:
-          - { key: needs-vni, operator: Exists }
+          - { key: vni, operator: Exists }
+    - apiVersion: batch.volcano.sh/v1alpha1
+      resource: jobs
+      annotationSelector:
+        matchExpressions:
+          - { key: vni, operator: Exists }
+
+    - apiVersion: horizon-opencube.eu/v1
+      resource: vniclaims
   attachments:
     - apiVersion: horizon-opencube.eu/v1
       resource: vnis
