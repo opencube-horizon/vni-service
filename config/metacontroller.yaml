@@ -1,0 +1,42 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app.kubernetes.io/name: metacontroller
+  name: metacontroller
+  namespace: metacontroller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: metacontroller
+  serviceName: ""
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: metacontroller
+    spec:
+      serviceAccountName: metacontroller
+      containers:
+        - name: metacontroller
+          image: ghcr.io/metacontroller/metacontroller:v4.11.22
+          command: ["/usr/bin/metacontroller",
+                    "-discovery-interval", "1s",
+                    "-client-go-qps", "500",
+                    "-client-go-burst", "1000",
+                    "-workers", "25",
+                    "-events-burst", "500"
+          ]
+          args:
+            - --zap-log-level=4
+            - --discovery-interval=20s
+          livenessProbe:
+            httpGet:
+              port: 8081
+              path: /healthz
+          readinessProbe:
+            httpGet:
+              port: 8081
+              path: /readyz
+  volumeClaimTemplates: []
