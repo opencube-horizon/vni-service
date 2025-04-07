@@ -8,6 +8,10 @@ The VNI CRD and controller can be installed using the yaml files `config/vni-crd
 Apply then e.g. via `kubectl`. Refer to the Metacontroller [documentation](https://metacontroller.github.io/metacontroller/guide/install.html)
 for information on how to install the Metacontroller. Note that this it must be installed prior to applying the VNI controller yaml.
 
+By design, the VNI controller listens to resource creation events and acts upon those matching the configuration in `config/vni-controller.yml`.
+As of now, Deployments, DaemonSets, ReplicaSets, Jobs, and volcano.sh-Jobs are configured. 
+Adapt the configuration if you want to add support for other deployments!
+
 ## VNI Database & Endpoint
 
 The VNI database is a sqlite3 file, which is automatically created. The endpoint is deployed as a Service.
