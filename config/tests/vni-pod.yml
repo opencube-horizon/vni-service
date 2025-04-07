@@ -3,7 +3,7 @@ kind: Pod
 metadata:
   name: testpod
   annotations:
-    needs-vni: "yes"
+    vni: "yes"
 spec:
   containers:
     - name: testpod

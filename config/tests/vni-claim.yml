@@ -1,7 +1,7 @@
 apiVersion: horizon-opencube.eu/v1
-kind: Vni
+kind: VniClaim
 metadata:
-  name: vni-test
+  name: vni-claim-test
   namespace: vnitest
 spec:
-  vni: 1
+  name: test
