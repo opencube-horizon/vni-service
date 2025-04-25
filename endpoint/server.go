@@ -5,10 +5,8 @@ import (
 	"github.com/mattn/go-sqlite3"
 	"log"
 	"net/http"
-	"sync"
 )
 
-var lock sync.Mutex
 var vniMin = 100
 var vniMax = 65535
 var shouldLog bool
@@ -44,7 +42,7 @@ func StartServer(filePath *string, _shouldLog bool) error {
 	http.HandleFunc("/sync", cSync)
 	http.HandleFunc("/finalize", cFinalize)
 
-	log.Printf("Starting server at port 8842 (logging: %v)\n", shouldLog)
+	log.Printf("Starting server (v1.0) at port 8842 (logging: %v)\n", shouldLog)
 	err = http.ListenAndServe(":8842", nil)
 	if err != nil {
 		log.Printf("Error while starting server: %v\n",

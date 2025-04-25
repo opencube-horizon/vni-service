@@ -204,14 +204,12 @@ func cFinalize(w http.ResponseWriter, r *http.Request) {
 					err = ReleaseUserCheck(db, vniUid, vniNamespace, shouldLog)
 					if errors.Is(err, ErrVNINotFound) {
 						continue
-					}
-					if errors.Is(err, ErrVNIInUse) {
+					} else if errors.Is(err, ErrVNIInUse) {
 						w.Write([]byte("VNI still in use, will not release\n"))
 						log.Printf("VNI still in use, will not release\n")
 						finalized = false
 						continue
-					}
-					if err != nil {
+					} else if err != nil {
 						w.WriteHeader(http.StatusInternalServerError)
 						w.Write([]byte(err.Error()))
 						log.Printf("Error releasing VNI: %v\n", err)
