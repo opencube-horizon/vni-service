@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
         - name: vni-service-endpoint
-          image: harbor.pt.horizon-opencube.eu/vni-management/vni-service-endpoint:latest
+          image: harbor.pt.horizon-opencube.eu/vni-system/vni_service_endpoint:1.0
           volumeMounts:
             - name: vni-endpoint-db
               mountPath: /opt/db

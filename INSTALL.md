@@ -1,6 +1,6 @@
 # Installing the VNI service stack
 
-Assumptions: A running kubernetes cluster.
+Assumptions: A running kubernetes cluster with the CXI CNI plugin deployed.
 
 
 ## VNI CRD and Controller
@@ -36,4 +36,5 @@ Make sure to adapt the image url to point to the image of your container registr
 
 ## Usage
 
-Attach the annotation `needs-vni: true` to a Job you want a new VNI for.
+Attach the annotation `vni: true` to a Job you want a new VNI for. Alternatively, annotate with `vni: 'claim-name'` after
+having created a VniClaim object. See `config/tests/vni-claim.yml` for an example VniClaim.
