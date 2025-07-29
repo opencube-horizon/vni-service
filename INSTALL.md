@@ -26,7 +26,7 @@ The result is a static binary.
 
 Second, build a container image using the provided Containerfile, e.g. using
 ```shell
-buildah build -t vni_service_endpoint -f Containerfile
+buildah build -t vni_service_endpoint -f endpoint/Containerfile
 ```
 
 Upload it to your container registry of choice.
@@ -36,4 +36,5 @@ Make sure to adapt the image url to point to the image of your container registr
 
 ## Usage
 
-Attach the annotation `needs-vni: true` to a Job you want a new VNI for.
+Attach the annotation `vni: true` to a Job you want a new VNI for. Alternatively, annotate with `vni: 'claim-name'` after
+having created a VniClaim object. See `config/tests/vni-claim.yml` for an example VniClaim.
