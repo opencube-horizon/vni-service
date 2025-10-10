@@ -4,9 +4,12 @@ Assumptions: A running kubernetes cluster with the CXI CNI plugin deployed.
 
 
 ## VNI CRD and Controller
-The VNI CRD and controller can be installed using the yaml files `config/vni-crd.yml` and `config/vni-controller.yml`. 
-Apply then e.g. via `kubectl`. Refer to the Metacontroller [documentation](https://metacontroller.github.io/metacontroller/guide/install.html)
-for information on how to install the Metacontroller. Note that this it must be installed prior to applying the VNI controller yaml.
+First, install Metacontroller. Refer to the Metacontroller [documentation](https://metacontroller.github.io/metacontroller/guide/install.html) for information on how to install the Metacontroller.
+Apply the file `config/metacontroller.yaml`, which contains some tuning options for the Metacontroller engine.
+
+Create a namespace using file `config/vni-management-namespace.yml`.
+The VNI CRD and controller can be installed using the yaml files `config/vni-crd.yml`, `config/vni-claim-crd.yml` and `config/vni-controller.yml`. 
+Apply then e.g. via `kubectl`. 
 
 By design, the VNI controller listens to resource creation events and acts upon those matching the configuration in `config/vni-controller.yml`.
 As of now, Deployments, DaemonSets, ReplicaSets, Jobs, and volcano.sh-Jobs are configured. 
