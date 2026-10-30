@@ -4,19 +4,21 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/tidwall/gjson"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
+
+	"github.com/tidwall/gjson"
 )
 
 func cVersion(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("1.0"))
+	w.Write([]byte(version))
 }
 
 func cSync(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("Sync hook called")
 	defer r.Body.Close()
 	body, _ := io.ReadAll(r.Body)
 
@@ -25,7 +27,7 @@ func cSync(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
-		log.Printf("Error reading body: %v\n", err.Error())
+		slog.Error("Error reading body", "err", err.Error())
 		return
 	}
 	attachments := syncHookRequest.Attachments
@@ -45,7 +47,7 @@ func cSync(w http.ResponseWriter, r *http.Request) {
 
 	db, err := open(DBFilePath)
 	if err != nil {
-		log.Printf("Error opening db: %v\n", err.Error())
+		slog.Error("Error opening db", "err", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 		return
@@ -61,6 +63,10 @@ func cSync(w http.ResponseWriter, r *http.Request) {
 				vniUid = fmt.Sprintf("vni-%s", callerUid)
 			}
 
+			if callerAnnotationVni == "false" || callerAnnotationVni == "no" {
+				continue
+			}
+
 			if (callerApiVersion == "horizon-opencube.eu/v1" && callerKind == "VniClaim") ||
 				callerAnnotationVni == "true" || callerAnnotationVni == "yes" {
 				// we own the VNI - create one
@@ -68,7 +74,7 @@ func cSync(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					w.WriteHeader(http.StatusInternalServerError)
 					w.Write([]byte(err.Error()))
-					log.Printf("Error acquiring VNI: %v\n", err)
+					slog.Error("Error acquiring VNI", "err", err)
 					return
 				}
 				newVni := Vni{
@@ -78,6 +84,7 @@ func cSync(w http.ResponseWriter, r *http.Request) {
 					Spec:       map[string]int{"vni": vni},
 				}
 				syncHookResponse.Attachments = append(syncHookResponse.Attachments, newVni)
+				slog.Debug(fmt.Sprintf("  Acquired VNI %d with name %s in NS %s\n", vni, vniUid, callerNamespace))
 			} else if callerAnnotationVni != "" {
 				// update target VNI by adding callerUid to user table
 				//  only do that for non-VniClaims
@@ -86,8 +93,10 @@ func cSync(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					w.WriteHeader(http.StatusInternalServerError)
 					w.Write([]byte(err.Error()))
-					log.Printf("Error adding user: %v (%s %s %s)\n",
-						err, callerAnnotationVni, callerNamespace, callerUid)
+					slog.Error("Error adding user",
+						"err", err, "callerAnnotationVni",
+						callerAnnotationVni, "callerNamespace",
+						callerNamespace, "callerUid", callerUid)
 					return
 				}
 
@@ -95,16 +104,16 @@ func cSync(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					w.WriteHeader(http.StatusInternalServerError)
 					w.Write([]byte(err.Error()))
-					log.Printf("Error getting VNI: %s (%s %s)\n",
-						vniUid, callerNamespace, callerUid)
+					slog.Error(fmt.Sprintf("Error getting VNI: %s (%s %s)\n",
+						vniUid, callerNamespace, callerUid))
 					return
 				}
 
 				if vni == -1 {
 					w.WriteHeader(http.StatusNotFound)
 					w.Write([]byte(err.Error()))
-					log.Printf("No VNI for VNI UID: %s (%s %s)\n",
-						vniUid, callerNamespace, callerUid)
+					slog.Warn("No VNI for VNI UID",
+						"vniUid", vniUid, "callerNamespace", callerNamespace, "callerUid", callerUid)
 					return
 				}
 
@@ -116,6 +125,7 @@ func cSync(w http.ResponseWriter, r *http.Request) {
 					Spec:       map[string]int{"vni": vni},
 				}
 				syncHookResponse.Attachments = append(syncHookResponse.Attachments, newVni)
+				slog.Debug("  Added user", "callerUid", callerUid, "vni", vni, "vniUid", vniUid, "callerNamespace", callerNamespace)
 			}
 		}
 	}
@@ -127,12 +137,13 @@ func cSync(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
-		log.Printf("Error writing body: %v\n", err.Error())
+		slog.Error("Error writing body", "err", err.Error())
 		return
 	}
 }
 
 func cFinalize(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("Finalize hook called")
 	defer r.Body.Close()
 	body, _ := io.ReadAll(r.Body)
 
@@ -141,7 +152,7 @@ func cFinalize(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
-		log.Printf("Error reading body: %v\n", err.Error())
+		slog.Error("Error reading body", "err", err.Error())
 		return
 	}
 
@@ -159,7 +170,7 @@ func cFinalize(w http.ResponseWriter, r *http.Request) {
 
 	db, err := open(DBFilePath)
 	if err != nil {
-		log.Printf("Error opening db: %v\n", err.Error())
+		slog.Error("Error opening db", "err", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 		return
@@ -172,11 +183,15 @@ func cFinalize(w http.ResponseWriter, r *http.Request) {
 		if k == "Vni.horizon-opencube.eu/v1" {
 			vni, ok := attachment.(map[string]interface{})
 			if !ok {
-				log.Printf("Error handling VNI attachment: %v\n", attachment)
+				slog.Warn("Error handling VNI attachment", "attachment", attachment)
 				continue
 			}
 
 			for vniUid, vniBody := range vni {
+				if callerAnnotationVni == "false" || callerAnnotationVni == "no" {
+					continue
+				}
+
 				// Metacontroller wants to have finalized=false in case the received state
 				//  does not match the desired state, yet
 				//  so if there are still attached VNIs, set finalized to false
@@ -186,14 +201,14 @@ func cFinalize(w http.ResponseWriter, r *http.Request) {
 
 				vniBodyParsed, ok := vniBody.(map[string]interface{})
 				if !ok {
-					log.Printf("Error handling VNI attachment: %v\n", attachment)
+					slog.Warn("Error handling VNI attachment", "attachment", attachment)
 					continue
 				}
 
 				metadata := vniBodyParsed["metadata"]
 				metadataParsed, ok := metadata.(map[string]interface{})
 				if !ok {
-					log.Printf("Error handling VNI attachment: %v\n", attachment)
+					slog.Warn("Error handling VNI attachment", "attachment", attachment)
 					continue
 				}
 				vniNamespace := metadataParsed["namespace"].(string)
@@ -206,15 +221,16 @@ func cFinalize(w http.ResponseWriter, r *http.Request) {
 						continue
 					} else if errors.Is(err, ErrVNIInUse) {
 						w.Write([]byte("VNI still in use, will not release\n"))
-						log.Printf("VNI still in use, will not release\n")
+						slog.Info("VNI still in use, will not release\n")
 						finalized = false
 						continue
 					} else if err != nil {
 						w.WriteHeader(http.StatusInternalServerError)
 						w.Write([]byte(err.Error()))
-						log.Printf("Error releasing VNI: %v\n", err)
+						slog.Error("Error releasing VNI", "err", err)
 						return
 					}
+					slog.Debug("  Releasing VNI", "vniUid", vniUid, "vniNamespace", vniNamespace)
 				} else if (callerAnnotationVni == "true" || callerAnnotationVni == "yes") &&
 					(len(vniUidParts) > 1 && strings.Join(vniUidParts[1:], "-") == callerUid) {
 					// we requested a VNI & own it - release it immediately
@@ -223,9 +239,10 @@ func cFinalize(w http.ResponseWriter, r *http.Request) {
 					if err != nil {
 						w.WriteHeader(http.StatusInternalServerError)
 						w.Write([]byte(err.Error()))
-						log.Printf("Error releasing VNI: %v\n", err)
+						slog.Error("  Error releasing VNI: ", "err", err)
 						return
 					}
+					slog.Debug("  Releasing VNI", "vniUid", vniUid, "vniNamespace", vniNamespace)
 				} else if callerAnnotationVni != "" &&
 					!(callerAnnotationVni == "true" || callerAnnotationVni == "yes") &&
 					fmt.Sprintf("vni-%s", callerUid) == vniUid {
@@ -236,9 +253,10 @@ func cFinalize(w http.ResponseWriter, r *http.Request) {
 					if err != nil {
 						w.WriteHeader(http.StatusInternalServerError)
 						w.Write([]byte(err.Error()))
-						log.Printf("Error removing user: %v\n", err)
+						slog.Error("  Error removing user", "err", err)
 						return
 					}
+					slog.Debug("  Removing user", "callerUid", callerUid, "vniUid", vniUid, "vniNamespace", vniNamespace)
 				}
 			}
 		}
@@ -257,7 +275,7 @@ func cFinalize(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
-		log.Printf("Error writing body: %v\n", err.Error())
+		slog.Error("Error writing body", "err", err.Error())
 		return
 	}
 }
