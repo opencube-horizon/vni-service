@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: vni-test-job
+  namespace: vnitest
+  annotations:
+    vni: "false"
+spec:
+  completions: 3
+  parallelism: 2
+  completionMode: Indexed  # required for the feature
+  backoffLimitPerIndex: 1  # maximal number of failures per index
+  maxFailedIndexes: 3      # maximal number of failed indexes before terminating the Job execution
+  template:
+    spec:
+      restartPolicy: Never # required for the feature
+      terminationGracePeriodSeconds: 0
+      nodeSelector:
+        kubernetes.io/hostname: cn04
+      containers:
+        - name: example
+          image: docker.io/alpine:latest
+          command:
+            - env
